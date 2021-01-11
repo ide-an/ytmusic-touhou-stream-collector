@@ -1,4 +1,5 @@
 import ytmusicapi
+import editdistance
 from pprint import pprint
 import typing
 from time import sleep
@@ -53,6 +54,8 @@ def normalize(s):
     s = s.lower()
     # ~と～の表記ゆれ
     s = s.replace('~',' ').replace('\u301C',' ').replace('\uFF5E',' ')
+    # (feat.～)の削除
+    #s = re.sub('\(feat\.[^(]*\)',"",s)
     # ()のあるなし
     s = s.replace('(','').replace(')','').replace('（','').replace('）','')
     s = s.replace('[','').replace(']','')
@@ -62,6 +65,7 @@ def normalize(s):
     s = re.sub("-ep$", "", s)
     return s
 
+EDIT_DISTANCE_THRES = 100
 def find_track_in_albums(yt, seed, albums):
     album_found = False
     for album in albums:
@@ -77,9 +81,21 @@ def find_track_in_albums(yt, seed, albums):
             album_detail = get_album_detail(yt, album["browseId"])
             if is_debug:
                 pprint(album_detail)
+            min_distance = 10000
+            min_distance_track = None
             for track in album_detail["tracks"]:
                 if normalize(track["title"]) == normalize(seed.track_name):
                     return create_ytmusic_url(album, track)
+                distance = editdistance.eval(normalize(track["title"]), normalize(seed.track_name))
+                if is_debug:
+                    print("{}: distance between {} and {}: {}".format(datetime.now(),normalize(track["title"]), normalize(seed.track_name),distance))
+                if distance < min_distance:
+                    min_distance = distance
+                    min_distance_track = track
+            # 正規化での一致で見つからなかったら編集距離最小のものを採用。
+            # アルバム名が一致している時点でトラックのどれかに合致する可能性が高いという仮定をしている
+            if min_distance_track is not None and min_distance < EDIT_DISTANCE_THRES:
+                return create_ytmusic_url(album, min_distance_track)
     if not album_found:
         print("{}: album not found:{}".format(datetime.now(), seed))
     return None
