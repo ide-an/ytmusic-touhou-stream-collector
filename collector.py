@@ -54,8 +54,10 @@ def normalize(s):
     s = s.lower()
     # ~と～の表記ゆれ
     s = s.replace('~',' ').replace('\u301C',' ').replace('\uFF5E',' ')
-    # (feat.～)の削除
-    #s = re.sub('\(feat\.[^(]*\)',"",s)
+    # (ZYTOKINE)の削除（SOUND HOLIC対応）
+    s = s.replace('(zytokine)','')
+    # (feat.～)の削除（主にSOUND HOLIC対応）
+    s = re.sub('\(feat\.[^(]*\)',"",s)
     # ()のあるなし
     s = s.replace('(','').replace(')','').replace('（','').replace('）','')
     s = s.replace('[','').replace(']','')
