@@ -12,10 +12,15 @@ ytmusic-touhou-stream-collectorは[東方同人音楽流通](https://touhou-musi
 
 https://ytmusicapi.readthedocs.io/en/latest/setup.html#authenticated-requests を参考に`header_auth.json`を作成する。
 
-### Run with Docker
+### Run
 
-*TODO:書く*
 ```sh
-docker build -t ytmusic-touhou-stream-collector .
-docker run --rm ytmusic-touhou-stream-collector
+# venv環境作成
+python -m venv env
+. env/Scripts/activate
+# 必要なパッケージ入れる
+pip install < requirements.txt
+# 実行
+python collector.py
+# result.tsvに出力される
 ```
