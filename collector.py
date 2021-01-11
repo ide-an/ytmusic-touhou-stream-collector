@@ -11,7 +11,7 @@ import difflib
 def str_similarity(a,b):
     return difflib.SequenceMatcher(None, a, b).ratio()
 
-is_debug = True
+is_debug = False
 
 class Seed(typing.NamedTuple):
     collection_name:str
