@@ -32,14 +32,15 @@ def create_ytmusic_url(album, track):
         "https://music.youtube.com/watch?v={}".format(track["videoId"])
     )
 
-albums_cache = {}
-def get_albums(yt, search_key):
+def normalize_search_key(search_key):
     # マイナス検索にならないようにハイフンから始まるトークンを置換
     search_key = re.sub('(^| )-',' ',search_key)
     # EPの削除（狐夢想屋などEP系対応）
     search_key = re.sub(" EP($| )", " ", search_key)
     # Singleの削除（Single系対応）
     search_key = re.sub("Single($| )", " ", search_key)
+    # (feat.～)の削除（主にSOUND HOLIC対応）
+    search_key = re.sub('\(feat\.[^(]*\)',"",search_key)
     # ─削除(IOSYS対応)
     search_key = search_key.replace('─',' ')
     # with senya削除(幽閉サテライト対応)
@@ -48,6 +49,15 @@ def get_albums(yt, search_key):
     search_key = search_key.replace('≒',' ')
     # ★☆削除(ROLLING★STAR, はくたく☆りぼん まじキモけーね 対応)
     search_key = search_key.replace('★',' ').replace('☆',' ')
+    # ⇔♭削除(EnD ⇔ StarT,B♭: Scarlet Sequel 対応)
+    search_key = search_key.replace('⇔',' ').replace('♭',' ')
+    # カッコ囲み削除
+    search_key = re.sub('\([^(]*\)',"",search_key)
+    return search_key
+
+albums_cache = {}
+def get_albums(yt, search_key):
+    search_key = normalize_search_key(search_key)
     if is_debug:
         print("{}: search_key:{}".format(datetime.now(), search_key))
     if search_key not in albums_cache:
@@ -92,18 +102,20 @@ def find_track_in_albums(yt, seed, albums):
     album_found = False
     # album名のsimilarityが高いものから調べる
     norm_collection_name = normalize(seed.collection_name)
-    albums = sorted(albums, key=lambda x:str_similarity(x["title"], norm_collection_name), reverse=True)
+    albums = sorted(albums, key=lambda x:str_similarity(normalize(x["title"]), norm_collection_name), reverse=True)
     for album in albums:
         if is_debug:
-            pprint(album)
+            pass
+            #pprint(album)
         # apple musicでのアーティスト名は必ずしもyoutube musicと一致しない。そのためアーティスト名の判定はしない
         # 例： 「蓬莱人形 ~ Dolls in Pseudo Paradise」のアルバムアーティストは「ZUN」ではなく「上海アリス幻樂団」
         norm_album_title = normalize(album["title"])
         if is_debug:
             pprint(norm_album_title)
             pprint(norm_collection_name)
-        # ときどき片方に含まれてない文字列がアルバムタイトルに混ざるので類似度やや緩めに設定
-        if norm_album_title == norm_collection_name or str_similarity(norm_album_title, norm_collection_name) > 0.5:
+            pprint(str_similarity(norm_album_title, norm_collection_name))
+        # ときどき片方に含まれてない文字列がアルバムタイトルに混ざるので類似度緩めに設定
+        if norm_album_title == norm_collection_name or str_similarity(norm_album_title, norm_collection_name) > 0.1:
             album_found = True
             album_detail = get_album_detail(yt, album["browseId"])
             if is_debug:
@@ -111,9 +123,7 @@ def find_track_in_albums(yt, seed, albums):
             max_similarity = -1
             max_similarity_track = None
             for track in album_detail["tracks"]:
-                if track["index"] != seed.track_number:
-                    continue
-                if normalize(track["title"]) == normalize(seed.track_name):
+                if normalize(track["title"]) == normalize(seed.track_name) and track["index"] == seed.track_number:
                     return create_ytmusic_url(album, track)
                 similarity = str_similarity(normalize(track["title"]), normalize(seed.track_name))
                 if is_debug:
@@ -123,7 +133,7 @@ def find_track_in_albums(yt, seed, albums):
                     max_similarity_track = track
             # 正規化での一致で見つからなかったら類似度最大のものを採用。
             # アルバム名が一致している時点でトラックのどれかに合致する可能性が高いという仮定をしている
-            if max_similarity_track is not None and max_similarity > 0:
+            if max_similarity_track is not None and max_similarity > 0.5:
                 return create_ytmusic_url(album, max_similarity_track)
     if not album_found:
         print("{}: album not found:{}".format(datetime.now(), seed))
