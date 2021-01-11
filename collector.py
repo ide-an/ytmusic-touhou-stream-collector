@@ -28,9 +28,9 @@ def create_ytmusic_url(album, track):
     )
 
 albums_cache = {}
-def get_albums(yt, collection_name, artist_name):
+def get_albums(yt, search_key):
     # マイナス検索にならないようにハイフンを置換
-    search_key = (collection_name).replace("-", " ")
+    search_key = search_key.replace("-", " ")
     # EPの削除（狐夢想屋対応）
     search_key = re.sub("EP$", "", search_key)
     if is_debug:
@@ -62,9 +62,7 @@ def normalize(s):
     s = re.sub("-ep$", "", s)
     return s
 
-def search_ytmusic(yt:ytmusicapi.YTMusic, seed:Seed):
-    # 該当するアルバムを見つける→該当する曲を見つける
-    albums = get_albums(yt, seed.collection_name, seed.artist_name)
+def find_track_in_albums(yt, seed, albums):
     album_found = False
     for album in albums:
         if is_debug:
@@ -80,11 +78,24 @@ def search_ytmusic(yt:ytmusicapi.YTMusic, seed:Seed):
             if is_debug:
                 pprint(album_detail)
             for track in album_detail["tracks"]:
-                #pprint(track)
                 if normalize(track["title"]) == normalize(seed.track_name):
                     return create_ytmusic_url(album, track)
     if not album_found:
         print("{}: album not found:{}".format(datetime.now(), seed))
+    return None
+
+def search_ytmusic(yt:ytmusicapi.YTMusic, seed:Seed):
+    # 該当するアルバムを見つける→該当する曲を見つける
+    albums = get_albums(yt, seed.collection_name + " " + seed.artist_name)
+    track = find_track_in_albums(yt, seed, albums)
+    if track is not None:
+        return track
+    # アルバムアーティスト != アーティストの場合、アーティスト名を含めた検索がヒットしないことがある
+    # その場合はアルバム名のみで再検索
+    albums = get_albums(yt, seed.collection_name)
+    track = find_track_in_albums(yt, seed, albums)
+    if track is not None:
+        return track
     return None
 
 def output_line(f_out, seed:Seed, ytmusic_result:YTMusicResult):
@@ -112,7 +123,8 @@ def main():
     print("{}: start collector".format(datetime.now()))
     # languageをjaにしない場合日本語のアルバム名でも英語で返ってくる。そのため明示的に指定している
     yt = ytmusicapi.YTMusic("header_auth.json", language="ja")
-    with open("seed.tsv", encoding="utf-8") as f_in, open("result.tsv","wt", encoding="utf-8") as f_out:
+    seed_file = "seed.tsv" if not is_debug else "seed2.tsv"
+    with open(seed_file, encoding="utf-8") as f_in, open("result.tsv","wt", encoding="utf-8") as f_out:
         is_header = True
         i = 0
         for line in f_in:

@@ -1,3 +1,5 @@
 env/
 header_auth.json
 result.tsv
+__pycache__/
+*.pyc
