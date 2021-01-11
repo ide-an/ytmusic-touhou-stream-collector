@@ -10,7 +10,7 @@ ytmusic-touhou-stream-collectorは[東方同人音楽流通](https://touhou-musi
 
 ### Set up
 
-*TODO:ytmusicapi用の認証セットアップ*
+https://ytmusicapi.readthedocs.io/en/latest/setup.html#authenticated-requests を参考に`header_auth.json`を作成する。
 
 ### Run with Docker
 

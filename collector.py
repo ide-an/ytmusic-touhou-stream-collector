@@ -32,7 +32,7 @@ def search_ytmusic(yt:ytmusicapi.YTMusic, seed:Seed):
 
 def main():
     # languageをjaにしない場合日本語のアルバム名でも英語で返ってくる。そのため明示的に指定している
-    yt = ytmusicapi.YTMusic(language="ja")
+    yt = ytmusicapi.YTMusic("header_auth.json", language="ja")
     with open("seed.tsv", encoding="utf-8") as f_in, open("result.tsv","wt", encoding="utf-8") as f_out:
         is_header = True
         i = 0
