@@ -6,14 +6,18 @@ from time import sleep
 from datetime import datetime
 import unicodedata
 import re
+import difflib
 
-is_debug = False
+def str_similarity(a,b):
+    return difflib.SequenceMatcher(None, a, b).ratio()
+
+is_debug = True
 
 class Seed(typing.NamedTuple):
     collection_name:str
     track_name:str
     artist_name:str
-    track_numbe:str
+    track_number:str
     release_date:str
     collection_view_url:str
     track_view_url:str
@@ -30,10 +34,20 @@ def create_ytmusic_url(album, track):
 
 albums_cache = {}
 def get_albums(yt, search_key):
-    # マイナス検索にならないようにハイフンを置換
-    search_key = search_key.replace("-", " ")
-    # EPの削除（狐夢想屋対応）
-    search_key = re.sub("EP$", "", search_key)
+    # マイナス検索にならないようにハイフンから始まるトークンを置換
+    search_key = re.sub('(^| )-',' ',search_key)
+    # EPの削除（狐夢想屋などEP系対応）
+    search_key = re.sub(" EP($| )", " ", search_key)
+    # Singleの削除（Single系対応）
+    search_key = re.sub("Single($| )", " ", search_key)
+    # ─削除(IOSYS対応)
+    search_key = search_key.replace('─',' ')
+    # with senya削除(幽閉サテライト対応)
+    search_key = search_key.replace('with senya','')
+    # ≒削除(Love≒Sick対応)
+    search_key = search_key.replace('≒',' ')
+    # ★☆削除(ROLLING★STAR, はくたく☆りぼん まじキモけーね 対応)
+    search_key = search_key.replace('★',' ').replace('☆',' ')
     if is_debug:
         print("{}: search_key:{}".format(datetime.now(), search_key))
     if search_key not in albums_cache:
@@ -56,48 +70,61 @@ def normalize(s):
     s = s.replace('~',' ').replace('\u301C',' ').replace('\uFF5E',' ')
     # (ZYTOKINE)の削除（SOUND HOLIC対応）
     s = s.replace('(zytokine)','')
+    # (つぅ →(への変換(toho euro trigger対応)
+    s = s.replace('(つぅ ','(')
+    # (配信Ver)削除(凋叶棕対応)
+    s = s.replace('(配信ver)','')
     # (feat.～)の削除（主にSOUND HOLIC対応）
     s = re.sub('\(feat\.[^(]*\)',"",s)
     # ()のあるなし
     s = s.replace('(','').replace(')','').replace('（','').replace('）','')
     s = s.replace('[','').replace(']','')
+    # EPの削除（EP系対応）
+    s = re.sub("-? *ep$", " ", s)
+    # Singleの削除（Single系対応）
+    s = re.sub("-? *single$", " ", s)
     # 空白のあるなし
     s = s.replace(' ','').replace('　','')
-    # EPの削除（狐夢想屋対応）
-    s = re.sub("-ep$", "", s)
     return s
 
-EDIT_DISTANCE_THRES = 100
+#EDIT_DISTANCE_THRES = 100
 def find_track_in_albums(yt, seed, albums):
     album_found = False
+    # album名のsimilarityが高いものから調べる
+    norm_collection_name = normalize(seed.collection_name)
+    albums = sorted(albums, key=lambda x:str_similarity(x["title"], norm_collection_name), reverse=True)
     for album in albums:
         if is_debug:
             pprint(album)
         # apple musicでのアーティスト名は必ずしもyoutube musicと一致しない。そのためアーティスト名の判定はしない
         # 例： 「蓬莱人形 ~ Dolls in Pseudo Paradise」のアルバムアーティストは「ZUN」ではなく「上海アリス幻樂団」
+        norm_album_title = normalize(album["title"])
         if is_debug:
-            pprint(normalize(album["title"]))
-            pprint(normalize(seed.collection_name))
-        if normalize(album["title"]) == normalize(seed.collection_name):
+            pprint(norm_album_title)
+            pprint(norm_collection_name)
+        # ときどき片方に含まれてない文字列がアルバムタイトルに混ざるので類似度やや緩めに設定
+        if norm_album_title == norm_collection_name or str_similarity(norm_album_title, norm_collection_name) > 0.5:
             album_found = True
             album_detail = get_album_detail(yt, album["browseId"])
             if is_debug:
                 pprint(album_detail)
-            min_distance = 10000
-            min_distance_track = None
+            max_similarity = -1
+            max_similarity_track = None
             for track in album_detail["tracks"]:
+                if track["index"] != seed.track_number:
+                    continue
                 if normalize(track["title"]) == normalize(seed.track_name):
                     return create_ytmusic_url(album, track)
-                distance = editdistance.eval(normalize(track["title"]), normalize(seed.track_name))
+                similarity = str_similarity(normalize(track["title"]), normalize(seed.track_name))
                 if is_debug:
-                    print("{}: distance between {} and {}: {}".format(datetime.now(),normalize(track["title"]), normalize(seed.track_name),distance))
-                if distance < min_distance:
-                    min_distance = distance
-                    min_distance_track = track
-            # 正規化での一致で見つからなかったら編集距離最小のものを採用。
+                    print("{}: similarity between {} and {}: {}".format(datetime.now(),normalize(track["title"]), normalize(seed.track_name),similarity))
+                if similarity > max_similarity:
+                    max_similarity = similarity
+                    max_similarity_track = track
+            # 正規化での一致で見つからなかったら類似度最大のものを採用。
             # アルバム名が一致している時点でトラックのどれかに合致する可能性が高いという仮定をしている
-            if min_distance_track is not None and min_distance < EDIT_DISTANCE_THRES:
-                return create_ytmusic_url(album, min_distance_track)
+            if max_similarity_track is not None and max_similarity > 0:
+                return create_ytmusic_url(album, max_similarity_track)
     if not album_found:
         print("{}: album not found:{}".format(datetime.now(), seed))
     return None
@@ -121,7 +148,7 @@ def output_line(f_out, seed:Seed, ytmusic_result:YTMusicResult):
         seed.collection_name,
         seed.track_name,
         seed.artist_name,
-        seed.track_numbe,
+        seed.track_number,
         seed.release_date,
         seed.collection_view_url,
         seed.track_view_url,
@@ -158,8 +185,8 @@ def main():
             if i%SLEEP_COUNT == 0:
                 print("{}: done {} songs...".format(datetime.now(), i))
                 sleep(SLEEP_SECONDS)
-            if i > 1000:
-                break
+            #if i > 1000:
+            #    break
     print("{}: end collector".format(datetime.now()))
 
 if __name__ == "__main__":
