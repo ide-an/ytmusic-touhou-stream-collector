@@ -24,11 +24,15 @@ class Seed(typing.NamedTuple):
     track_view_url:str
 
 class YTMusicResult(typing.NamedTuple):
+    collection_name:str
+    track_name:str
     collection_view_url:str
     track_view_url:str
 
 def create_ytmusic_url(album, track):
     return YTMusicResult(
+        album["title"],
+        track["title"],
         "https://music.youtube.com/browse/{}".format(album["browseId"]),
         "https://music.youtube.com/watch?v={}".format(track["videoId"])
     )
@@ -154,6 +158,22 @@ def search_ytmusic(yt:ytmusicapi.YTMusic, seed:Seed):
         return track
     return None
 
+def output_header(f_out):
+    line = "\t".join([
+        "collection_name",
+        "track_name",
+        "artist_name",
+        "track_number",
+        "release_date",
+        "apple_collection_view_url",
+        "apple_track_view_url",
+        "youtube_collection_name",
+        "youtube_track_name",
+        "youtube_collection_view_url",
+        "youtube_track_view_url",
+    ])
+    f_out.write(line + "\n")
+
 def output_line(f_out, seed:Seed, ytmusic_result:YTMusicResult):
     line = "\t".join([
         seed.collection_name,
@@ -163,14 +183,11 @@ def output_line(f_out, seed:Seed, ytmusic_result:YTMusicResult):
         seed.release_date,
         seed.collection_view_url,
         seed.track_view_url,
+        ytmusic_result.collection_name if ytmusic_result is not None else "不明",
+        ytmusic_result.track_name if ytmusic_result is not None else "不明",
+        ytmusic_result.collection_view_url if ytmusic_result is not None else "不明",
+        ytmusic_result.track_view_url if ytmusic_result is not None else "不明",
     ])
-    if ytmusic_result is None:
-        line += "\tNone\tNone"
-    else:
-        line += "\t{}\t{}".format(
-            ytmusic_result.collection_view_url,
-            ytmusic_result.track_view_url
-        )
     f_out.write(line + "\n")
 
 SLEEP_SECONDS=1
@@ -183,6 +200,7 @@ def main():
     with open(seed_file, encoding="utf-8") as f_in, open("result.tsv","wt", encoding="utf-8") as f_out:
         is_header = True
         i = 0
+        output_header(f_out)
         for line in f_in:
             if is_header: # ヘッダ行skip
                 is_header = False
