@@ -1,5 +1,4 @@
 import ytmusicapi
-import editdistance
 from pprint import pprint
 import typing
 from time import sleep
