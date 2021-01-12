@@ -7,11 +7,12 @@ from datetime import datetime
 import unicodedata
 import re
 import difflib
+import traceback
 
 def str_similarity(a,b):
     return difflib.SequenceMatcher(None, a, b).ratio()
 
-is_debug = False
+is_debug = True
 
 class Seed(typing.NamedTuple):
     collection_name:str
@@ -189,7 +190,11 @@ def main():
             seed = Seed._make(line.rstrip().split("\t"))
             if is_debug:
                 pprint(seed)
-            result = search_ytmusic(yt, seed)
+            try:
+                result = search_ytmusic(yt, seed)
+            except Exception as e:
+                traceback.print_exc()
+                result = None
             output_line(f_out, seed, result)
             i += 1
             if i%SLEEP_COUNT == 0:
