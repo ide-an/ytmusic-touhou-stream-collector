@@ -7,34 +7,12 @@ import unicodedata
 import re
 import difflib
 import traceback
+from common import Seed, YTMusicResult, create_ytmusic_url, output_line, output_header, get_album_detail
 
 def str_similarity(a,b):
     return difflib.SequenceMatcher(None, a, b).ratio()
 
-is_debug = False
-
-class Seed(typing.NamedTuple):
-    collection_name:str
-    track_name:str
-    artist_name:str
-    track_number:str
-    release_date:str
-    collection_view_url:str
-    track_view_url:str
-
-class YTMusicResult(typing.NamedTuple):
-    collection_name:str
-    track_name:str
-    collection_view_url:str
-    track_view_url:str
-
-def create_ytmusic_url(album, track):
-    return YTMusicResult(
-        album["title"],
-        track["title"],
-        "https://music.youtube.com/browse/{}".format(album["browseId"]),
-        "https://music.youtube.com/watch?v={}".format(track["videoId"])
-    )
+is_debug = True
 
 def normalize_search_key(search_key):
     # マイナス検索にならないようにハイフンから始まるトークンを置換
@@ -68,12 +46,6 @@ def get_albums(yt, search_key):
         # TODO: 検索結果が複数ページの場合の対処
         albums_cache[search_key] = yt.search(search_key, 'albums', limit=100)
     return albums_cache[search_key]
-
-album_detail_cache = {}
-def get_album_detail(yt, browseId):
-    if browseId not in album_detail_cache:
-        album_detail_cache[browseId] = yt.get_album(browseId)
-    return album_detail_cache[browseId]
 
 def normalize(s):
     # unicode正規化
@@ -157,37 +129,6 @@ def search_ytmusic(yt:ytmusicapi.YTMusic, seed:Seed):
         return track
     return None
 
-def output_header(f_out):
-    line = "\t".join([
-        "collection_name",
-        "track_name",
-        "artist_name",
-        "track_number",
-        "release_date",
-        "apple_collection_view_url",
-        "apple_track_view_url",
-        "youtube_collection_name",
-        "youtube_track_name",
-        "youtube_collection_view_url",
-        "youtube_track_view_url",
-    ])
-    f_out.write(line + "\n")
-
-def output_line(f_out, seed:Seed, ytmusic_result:YTMusicResult):
-    line = "\t".join([
-        seed.collection_name,
-        seed.track_name,
-        seed.artist_name,
-        seed.track_number,
-        seed.release_date,
-        seed.collection_view_url,
-        seed.track_view_url,
-        ytmusic_result.collection_name if ytmusic_result is not None else "不明",
-        ytmusic_result.track_name if ytmusic_result is not None else "不明",
-        ytmusic_result.collection_view_url if ytmusic_result is not None else "不明",
-        ytmusic_result.track_view_url if ytmusic_result is not None else "不明",
-    ])
-    f_out.write(line + "\n")
 
 SLEEP_SECONDS=1
 SLEEP_COUNT=100
