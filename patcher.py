@@ -1,14 +1,7 @@
 import ytmusicapi
 import typing
 from pprint import pprint
-import re
-from common import Seed, YTMusicResult, read_line, output_header, output_line, create_ytmusic_url, get_album_detail
-
-def get_browse_id(s):
-    m = re.search("browse/([^/]*)/?$", s)
-    if m:
-        return m.group(1)
-    return None
+from common import Seed, YTMusicResult, read_line, output_header, output_line, create_ytmusic_url, get_album_detail, get_browse_id
 
 def correct_result(yt:ytmusicapi.YTMusic, seed, ytm_result):
     if ytm_result.collection_view_url == "不明":

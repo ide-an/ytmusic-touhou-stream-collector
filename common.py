@@ -1,5 +1,6 @@
 import typing
 import ytmusicapi
+import re
 
 class Seed(typing.NamedTuple):
     collection_name:str
@@ -61,6 +62,12 @@ def create_ytmusic_url(album, track):
         "https://music.youtube.com/browse/{}".format(album["browseId"]),
         "https://music.youtube.com/watch?v={}".format(track["videoId"])
     )
+
+def get_browse_id(s):
+    m = re.search("browse/([^/]*)/?$", s)
+    if m:
+        return m.group(1)
+    return None
 
 album_detail_cache = {}
 def get_album_detail(yt, browseId):
