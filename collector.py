@@ -62,6 +62,16 @@ def normalize(s):
     s = s.replace('(配信ver)','')
     # (feat.～)の削除（主にSOUND HOLIC対応）
     s = re.sub('\(feat\.[^(]*\)',"",s)
+    #  featの中に括弧があるケース（主にSOUND HOLIC対応）
+    s = re.sub('\(feat\.[^()]*\([^()]*\)[^(]*\)',"",s)
+    # [feat.～]の削除（主にIOSYS対応）
+    s = re.sub('\[feat\.[^\[]*\]',"",s)
+    # with senya削除(幽閉サテライト対応)
+    s = s.replace('with senya','')
+    # feat. cold kiss削除(ZYTOKine対応)
+    s = s.replace('feat. cold kiss','')
+    # -digital- 削除(NANAHOLIC対応)
+    s = s.replace('-digital-','')
     # ()のあるなし
     s = s.replace('(','').replace(')','').replace('（','').replace('）','')
     s = s.replace('[','').replace(']','')
@@ -90,27 +100,21 @@ def find_track_in_albums(yt, seed, albums):
             pprint(norm_album_title)
             pprint(norm_collection_name)
             pprint(str_similarity(norm_album_title, norm_collection_name))
-        # ときどき片方に含まれてない文字列がアルバムタイトルに混ざるので類似度緩めに設定
-        if norm_album_title == norm_collection_name or str_similarity(norm_album_title, norm_collection_name) > 0.1:
+        # アルバム名は完全一致とは限らないもののほぼ一致としたい
+        if str_similarity(norm_album_title, norm_collection_name) > 0.8:
             album_found = True
             album_detail = get_album_detail(yt, album["browseId"])
             if is_debug:
                 pprint(album_detail)
-            max_similarity = -1
-            max_similarity_track = None
             for track in album_detail["tracks"]:
-                if normalize(track["title"]) == normalize(seed.track_name) and track["index"] == seed.track_number:
-                    return create_ytmusic_url(album, track)
+                if track["index"] != seed.track_number: # 同じ曲だけどトラック番号が違うというケースはあり得るがごく少ないのでpatch.tsvで拾う
+                    continue
                 similarity = str_similarity(normalize(track["title"]), normalize(seed.track_name))
                 if is_debug:
                     print("{}: similarity between {} and {}: {}".format(datetime.now(),normalize(track["title"]), normalize(seed.track_name),similarity))
-                if similarity > max_similarity:
-                    max_similarity = similarity
-                    max_similarity_track = track
-            # 正規化での一致で見つからなかったら類似度最大のものを採用。
-            # アルバム名が一致している時点でトラックのどれかに合致する可能性が高いという仮定をしている
-            if max_similarity_track is not None and max_similarity > 0.5:
-                return create_ytmusic_url(album, max_similarity_track)
+                # アルバム名の一致条件が厳しめなのとトラック番号の一致を条件としているので、曲名の一致度の条件を緩める
+                if similarity > 0.4:
+                    return create_ytmusic_url(album, track)
     if not album_found:
         print("{}: album not found:{}".format(datetime.now(), seed))
     return None
