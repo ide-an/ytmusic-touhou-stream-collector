@@ -12,7 +12,7 @@ from common import Seed, YTMusicResult, create_ytmusic_url, output_line, output_
 def str_similarity(a,b):
     return difflib.SequenceMatcher(None, a, b).ratio()
 
-is_debug = True
+is_debug = False
 
 def normalize_search_key(search_key):
     # マイナス検索にならないようにハイフンから始まるトークンを置換
@@ -54,33 +54,29 @@ def normalize(s):
     s = s.lower()
     # ~と～の表記ゆれ
     s = s.replace('~',' ').replace('\u301C',' ').replace('\uFF5E',' ')
-    # なにかのあとに続く(～)の削除
-    s = re.sub('([^(]+)\([^(]*\)','\\1', s)
-    # 入れ子カッコを想定して複数回適用する
-    s = re.sub('([^(]+)\([^(]*\)','\\1', s)
+    # 全角括弧の対応
+    s = s.replace('（ ','(').replace('） ',')')
     # (ZYTOKINE)の削除（SOUND HOLIC対応）
-    #s = s.replace('(zytokine)','')
+    s = s.replace('(zytokine)','')
     # (つぅ →(への変換(toho euro trigger対応)
-    #s = s.replace('(つぅ ','(')
+    s = s.replace('(つぅ ','(')
     # (配信Ver)削除(凋叶棕対応)
-    #s = s.replace('(配信ver)','')
+    s = s.replace('(配信ver)','')
     # (feat.～)の削除（主にSOUND HOLIC対応）
-    #s = re.sub('\(feat\.[^(]*\)',"",s)
+    s = re.sub('\(feat\.[^(]*\)',"",s)
     #  featの中に括弧があるケース（主にSOUND HOLIC対応）
-    #s = re.sub('\(feat\.[^()]*\([^()]*\)[^(]*\)',"",s)
+    s = re.sub('\(feat\.[^()]*\([^()]*\)[^(]*\)',"",s)
     # [feat.～]の削除（主にIOSYS対応）
     s = re.sub('\[feat\.[^\[]*\]',"",s)
     # with senya削除(幽閉サテライト対応)
     s = s.replace('with senya','')
     # feat. cold kiss削除(ZYTOKine対応)
     s = s.replace('feat. cold kiss','')
-    # -ほげほげ- 削除
-    s = re.sub('-[^\-]*-','', s)
     # / vo.～削除
     s = re.sub('/ *vo\..*$','', s)
     # IOSYS系カッコ削除
-    #s = s.replace('(iosys hits punk covers)','').replace('(karaoke ver)','')
-    #s = re.sub('\(イオシス東方コンピレーション[^)]*\)','', s)
+    s = s.replace('(iosys hits punk covers)','').replace('(karaoke ver)','')
+    s = re.sub('\(イオシス東方コンピレーション[^)]*\)','', s)
     # ()のあるなし
     #s = s.replace('(','').replace(')','').replace('（','').replace('）','')
     s = s.replace('[','').replace(']','')
@@ -88,6 +84,8 @@ def normalize(s):
     s = re.sub("-? *ep *$", " ", s)
     # Singleの削除（Single系対応）
     s = re.sub("-? *single *$", " ", s)
+    # -ほげほげ- 削除
+    s = re.sub(' -[^\-]*-','', s)
     # instrumental 削除（幽閉サテライトなど）
     s = s.replace('instrumental','')
     # 空白のあるなし
