@@ -12,7 +12,7 @@ from common import Seed, YTMusicResult, create_ytmusic_url, output_line, output_
 def str_similarity(a,b):
     return difflib.SequenceMatcher(None, a, b).ratio()
 
-is_debug = True
+is_debug = False
 
 def normalize_search_key(search_key):
     # マイナス検索にならないようにハイフンから始まるトークンを置換
@@ -115,7 +115,8 @@ def find_track_in_albums(yt, seed, albums):
     # album名のsimilarityが高いものから調べる
     norm_collection_name = normalize(seed.collection_name)
     albums = sorted(albums, key=lambda x:str_similarity(normalize(x["title"]), norm_collection_name), reverse=True)
-    pprint([(x["title"],str_similarity(normalize(x["title"]), norm_collection_name)) for x in albums])
+    if is_debug:
+        pprint([(x["title"],str_similarity(normalize(x["title"]), norm_collection_name)) for x in albums])
     for album in albums:
         if is_debug:
             pass
