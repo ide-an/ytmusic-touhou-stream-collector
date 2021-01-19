@@ -10,6 +10,12 @@ def get_browse_id(s):
         return m.group(1)
     return None
 
+def get_track_id(s):
+    m = re.search("watch\?v=([^/]*)$", s)
+    if m:
+        return m.group(1)
+    return None
+
 def correct_result(yt:ytmusicapi.YTMusic, seed, ytm_result):
     if ytm_result.collection_view_url == "不明":
         # youtube musicにないやつ
@@ -17,8 +23,11 @@ def correct_result(yt:ytmusicapi.YTMusic, seed, ytm_result):
     browse_id = get_browse_id(ytm_result.collection_view_url) 
     album_detail = get_album_detail(yt, browse_id)
     album_detail["browseId"] = browse_id
-    track = [x for x in album_detail["tracks"] if x["index"] == seed.track_number][0]
-    pprint(album_detail)
+    if ytm_result.track_view_url == "不明":
+        track = [x for x in album_detail["tracks"] if x["index"] == seed.track_number][0]
+    else:
+        track_id = get_track_id(ytm_result.track_view_url)
+        track = [x for x in album_detail["tracks"] if x["videoId"] == track_id][0]
     pprint(track)
     return create_ytmusic_url(album_detail, track)
 
@@ -41,8 +50,8 @@ def main():
         output_header(f_out)
         for line in f_in:
             i+=1
-            if i > 2000:
-                break
+            #if i > 2000:
+            #    break
             if is_header: # ヘッダ行skip
                 is_header = False
                 continue
