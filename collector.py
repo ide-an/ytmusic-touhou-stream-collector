@@ -12,7 +12,7 @@ from common import Seed, YTMusicResult, create_ytmusic_url, output_line, output_
 def str_similarity(a,b):
     return difflib.SequenceMatcher(None, a, b).ratio()
 
-is_debug = False
+is_debug = True
 
 def normalize_search_key(search_key):
     # マイナス検索にならないようにハイフンから始まるトークンを置換
@@ -63,31 +63,48 @@ def normalize(s):
     # (配信Ver)削除(凋叶棕対応)
     s = s.replace('(配信ver)','')
     # (feat.～)の削除（主にSOUND HOLIC対応）
-    s = re.sub('\(feat\.[^(]*\)',"",s)
+    s = re.sub('\( *feat\.[^(]*\)',"",s)
     #  featの中に括弧があるケース（主にSOUND HOLIC対応）
-    s = re.sub('\(feat\.[^()]*\([^()]*\)[^(]*\)',"",s)
+    s = re.sub('\( *feat\.[^()]*\([^()]*\)[^(]*\)',"",s)
     # [feat.～]の削除（主にIOSYS対応）
-    s = re.sub('\[feat\.[^\[]*\]',"",s)
-    # with senya削除(幽閉サテライト対応)
-    s = s.replace('with senya','')
-    # feat. cold kiss削除(ZYTOKine対応)
+    s = re.sub('\[ *feat\.[^\[]*\]',"",s)
+    # (with ～)削除(幽閉サテライト対応)
+    s = re.sub('\(with [^(]*\)',"",s)
+    # [with ～]削除(幽閉サテライト対応)
+    s = re.sub('\[with [^\[]*\]',"",s)
+    # (op ver.)削除(幽閉サテライト対応)
+    s = s.replace('(op ver.)','')
+    # (~Mountain of Faith~)削除(the TOHO Creation EP 対応
+    s = s.replace('( mountain of faith )','')
+    # feat. cold kiss削除(ZYTOKINE対応)
     s = s.replace('feat. cold kiss','')
+    # nana takahashi削除(ZYTOKINE対応)
+    s = s.replace('nana takahashi','')
+    # feat. chata削除(N+
+    s = s.replace('feat.chata','')
     # / vo.～削除
     s = re.sub('/ *vo\..*$','', s)
-    # IOSYS系カッコ削除
-    s = s.replace('(iosys hits punk covers)','').replace('(karaoke ver)','')
+    # IOSYS系削除
+    s = s.replace('iosys hits punk covers','').replace('(karaoke ver)','')
     s = re.sub('\(イオシス東方コンピレーション[^)]*\)','', s)
+    # 外柿山対応
+    s = s.replace('変容する波形と位相。','')
     # ()のあるなし
-    #s = s.replace('(','').replace(')','').replace('（','').replace('）','')
+    s = s.replace('(','').replace(')','')
     s = s.replace('[','').replace(']','')
     # EPの削除（EP系対応）
     s = re.sub("-? *ep *$", " ", s)
     # Singleの削除（Single系対応）
     s = re.sub("-? *single *$", " ", s)
+    s = re.sub("-? *single *$", " ", s) # 幽閉サテライトなど２つ付いている場合がある
     # -ほげほげ- 削除
     s = re.sub(' -[^\-]*-','', s)
     # instrumental 削除（幽閉サテライトなど）
     s = s.replace('instrumental','')
+    # remaster削除
+    s = s.replace('remaster','')
+    # ハイフンのあるなし
+    s = s.replace('-',' ')
     # 空白のあるなし
     s = s.replace(' ','').replace('　','')
     return s
@@ -98,6 +115,7 @@ def find_track_in_albums(yt, seed, albums):
     # album名のsimilarityが高いものから調べる
     norm_collection_name = normalize(seed.collection_name)
     albums = sorted(albums, key=lambda x:str_similarity(normalize(x["title"]), norm_collection_name), reverse=True)
+    pprint([(x["title"],str_similarity(normalize(x["title"]), norm_collection_name)) for x in albums])
     for album in albums:
         if is_debug:
             pass
