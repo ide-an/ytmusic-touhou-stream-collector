@@ -14,6 +14,68 @@ is_debug = False
 def str_similarity(a,b):
     return difflib.SequenceMatcher(None, a, b).ratio()
 
+def normalize(s):
+    # unicode正規化
+    s = unicodedata.normalize('NFKC', s)
+    # 大文字小文字
+    s = s.lower()
+    # ~と～の表記ゆれ
+    s = s.replace('~',' ').replace('\u301C',' ').replace('\uFF5E',' ')
+    # 全角括弧の対応
+    s = s.replace('（ ','(').replace('） ',')')
+    # (ZYTOKINE)の削除（SOUND HOLIC対応）
+    s = s.replace('(zytokine)','')
+    # (つぅ →(への変換(toho euro trigger対応)
+    s = s.replace('(つぅ ','(')
+    # (配信Ver)削除(凋叶棕対応)
+    s = s.replace('(配信ver)','')
+    # (feat.～)の削除（主にSOUND HOLIC対応）
+    s = re.sub('\( *feat\.[^(]*\)',"",s)
+    #  featの中に括弧があるケース（主にSOUND HOLIC対応）
+    s = re.sub('\( *feat\.[^()]*\([^()]*\)[^(]*\)',"",s)
+    # [feat.～]の削除（主にIOSYS対応）
+    s = re.sub('\[ *feat\.[^\[]*\]',"",s)
+    # (with ～)削除(幽閉サテライト対応)
+    s = re.sub('\(with [^(]*\)',"",s)
+    # [with ～]削除(幽閉サテライト対応)
+    s = re.sub('\[with [^\[]*\]',"",s)
+    # (op ver.)削除(幽閉サテライト対応)
+    s = s.replace('(op ver.)','')
+    # (~Mountain of Faith~)削除(the TOHO Creation EP 対応
+    s = s.replace('( mountain of faith )','')
+    # feat. cold kiss削除(ZYTOKINE対応)
+    s = s.replace('feat. cold kiss','')
+    # nana takahashi削除(ZYTOKINE対応)
+    s = s.replace('nana takahashi','')
+    # feat. chata削除(N+
+    s = s.replace('feat.chata','')
+    # / vo.～削除
+    s = re.sub('/ *vo\..*$','', s)
+    # IOSYS系削除
+    s = s.replace('iosys hits punk covers','').replace('(karaoke ver)','')
+    s = re.sub('\(イオシス東方コンピレーション[^)]*\)','', s)
+    # 外柿山対応
+    s = s.replace('変容する波形と位相。','')
+    # ()のあるなし
+    s = s.replace('(','').replace(')','')
+    s = s.replace('[','').replace(']','')
+    # EPの削除（EP系対応）
+    s = re.sub("-? *ep *$", " ", s)
+    # Singleの削除（Single系対応）
+    s = re.sub("-? *single *$", " ", s)
+    s = re.sub("-? *single *$", " ", s) # 幽閉サテライトなど２つ付いている場合がある
+    # -ほげほげ- 削除
+    s = re.sub(' -[^\-]*-','', s)
+    # instrumental 削除（幽閉サテライトなど）
+    s = s.replace('instrumental','')
+    # remaster削除
+    s = s.replace('remaster','')
+    # ハイフンのあるなし
+    s = s.replace('-',' ')
+    # 空白のあるなし
+    s = s.replace(' ','').replace('　','')
+    return s
+
 def normalize_search_key(search_key):
     # マイナス検索にならないようにハイフンから始まるトークンを置換
     search_key = re.sub('(^| )-',' ',search_key)
@@ -39,7 +101,10 @@ def normalize_search_key(search_key):
 
 albums_cache = {}
 def get_albums(yt, search_key):
+    old_search_key = search_key
     search_key = normalize_search_key(search_key)
+    #if "NANA" in old_search_key:
+    #    pprint(search_key)
     if is_debug:
         print("{}: search_key:{}".format(datetime.now(), search_key))
     if search_key not in albums_cache:
@@ -52,7 +117,30 @@ def search_ytmusic(yt:ytmusicapi.YTMusic, seed:Seed):
     albums = get_albums(yt, seed.collection_name + " " + seed.artist_name)
     for album in albums:
         #pprint(album)
-        if str_similarity(album["title"], seed.collection_name) > 0.9 and str_similarity(album["artist"], seed.artist_name):
+        #if "NANA" in seed.collection_name:
+        #    pprint((
+        #        album["title"],
+        #        album["artist"],
+        #        seed.collection_name,
+        #        seed.artist_name,
+        #        str_similarity(normalize(album["title"]), normalize(seed.collection_name)),
+        #        str_similarity(normalize(album["artist"]), normalize(seed.artist_name)),
+        #    ))
+        if str_similarity(normalize(album["title"]), normalize(seed.collection_name)) > 0.9 and str_similarity(normalize(album["artist"]), normalize(seed.artist_name)) > 0.7:
+            return create_ytmusic_url(album, {"title":"","videoId":""})
+    albums = get_albums(yt, seed.collection_name)
+    for album in albums:
+        #pprint(album)
+        #if "NANA" in seed.collection_name:
+        #    pprint((
+        #        album["title"],
+        #        album["artist"],
+        #        seed.collection_name,
+        #        seed.artist_name,
+        #        str_similarity(normalize(album["title"]), normalize(seed.collection_name)),
+        #        str_similarity(normalize(album["artist"]), normalize(seed.artist_name)),
+        #    ))
+        if str_similarity(normalize(album["title"]), normalize(seed.collection_name)) > 0.9 and str_similarity(normalize(album["artist"]), normalize(seed.artist_name)) > 0.7:
             return create_ytmusic_url(album, {"title":"","videoId":""})
     return None
 
@@ -85,7 +173,7 @@ def main():
             if i%SLEEP_COUNT == 0:
                 print("{}: done {} songs...".format(datetime.now(), i))
                 sleep(SLEEP_SECONDS)
-            #if i > 10:
+            #if i > 100:
             #    break
     print("{}: end collector".format(datetime.now()))
 
