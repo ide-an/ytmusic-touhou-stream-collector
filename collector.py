@@ -89,6 +89,13 @@ def normalize(s):
     s = re.sub('\(イオシス東方コンピレーション[^)]*\)','', s)
     # 外柿山対応
     s = s.replace('変容する波形と位相。','')
+    # TAMUSIC対応
+    s = re.sub('\(東方[^(]*\)',"",s)
+    s = re.sub('\(touhou[^(]*\)',"",s)
+    s = re.sub('\([^(]*string quartet\)',"",s)
+    s = s.replace('(紅魔郷 妖々夢 永夜抄 best)','')
+    s = s.replace('(妖精大戦争   東方三月精)','')
+    s = s.replace('(violin+vocal project)','')
     # ()のあるなし
     s = s.replace('(','').replace(')','')
     s = s.replace('[','').replace(']','')
