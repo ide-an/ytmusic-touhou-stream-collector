@@ -28,6 +28,13 @@ ls patch.tsv
 
 # patch.tsvによる修正の適用。result_patched.tsvに出力される
 python patcher.py
+
+# diffを取りやすいようにsort
+python sort.py result_patched.tsv result_patched_sorted.tsv
+
+# archiveに保存
+cp result_patched_sorted.tsv archive/result.tsv
+sh split.sh
 ```
 
 ## patch.tsvのフォーマット
