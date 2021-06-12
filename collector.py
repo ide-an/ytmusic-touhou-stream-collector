@@ -12,7 +12,7 @@ from common import Seed, YTMusicResult, create_ytmusic_url, output_line, output_
 def str_similarity(a,b):
     return difflib.SequenceMatcher(None, a, b).ratio()
 
-is_debug = True
+is_debug = False
 
 def normalize_search_key(search_key):
     # マイナス検索にならないようにハイフンから始まるトークンを置換
@@ -196,7 +196,7 @@ def main():
             if is_header: # ヘッダ行skip
                 is_header = False
                 continue
-            seed = Seed._make(line.rstrip().split("\t"))
+            seed = Seed._make(line.rstrip().split("\t")[:7])
             if is_debug:
                 pprint(seed)
             try:
