@@ -12,7 +12,7 @@ from common import Seed, YTMusicResult, create_ytmusic_url, output_line, output_
 def str_similarity(a,b):
     return difflib.SequenceMatcher(None, a, b).ratio()
 
-is_debug = False
+is_debug = True
 
 def normalize_search_key(search_key):
     # マイナス検索にならないようにハイフンから始まるトークンを置換
@@ -168,6 +168,14 @@ def search_ytmusic(yt:ytmusicapi.YTMusic, seed:Seed):
         return track
     return None
 
+def check_authorized(yt:ytmusicapi.YTMusic):
+    # Cookieが壊れていると認証が切れていて検索結果が減少する
+    # 例として蓬莱人形がヒットしなくなるので収集前に確認する
+    results = yt.search("蓬莱人形", "albums", limit=100)
+    for r in results:
+        if r["title"] == "蓬莱人形 ~ Dolls in Pseudo Paradise":
+            return True
+    return False
 
 SLEEP_SECONDS=1
 SLEEP_COUNT=100
@@ -175,6 +183,10 @@ def main():
     print("{}: start collector".format(datetime.now()))
     # languageをjaにしない場合日本語のアルバム名でも英語で返ってくる。そのため明示的に指定している
     yt = ytmusicapi.YTMusic("header_auth.json", language="ja")
+    if not(check_authorized(yt)):
+        print("{}: NOT AUTHORIZED!!!".format(datetime.now()))
+        return
+
     seed_file = "seed.tsv" if not is_debug else "seed2.tsv"
     with open(seed_file, encoding="utf-8") as f_in, open("result.tsv","wt", encoding="utf-8") as f_out:
         is_header = True
