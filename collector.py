@@ -10,15 +10,20 @@ import traceback
 from common import Seed, YTMusicResult, create_ytmusic_url, output_line, output_header, get_album_detail
 
 def seed_v2_to_v1(columns):
+    def a_or_b(a, b):
+        if a is None or a == '':
+            return b
+        return a
     # jan	isrc	no	circle	spotify_album_artist_name	spotify_album_name	spotify_artist_name	spotify_track_name	spotify_album_url	spotify_track_url	apple_music_album_artist_name	apple_music_album_name	apple_music_artist_name	apple_music_track_name	apple_music_album_url	apple_music_track_url
+    print(columns)
     return Seed._make([
-    columns[11], # collection_name:str
-    columns[13], # track_name:str
-    columns[12], # artist_name:str
-    columns[2], # track_number:str
-    'N/A', # release_date:str
-    columns[14], # collection_view_url:str
-    columns[15], # track_view_url:str
+        a_or_b(columns[11], columns[5]), # collection_name:str
+        a_or_b(columns[13], columns[7]), # track_name:str
+        a_or_b(columns[12], columns[6]), # artist_name:str
+        columns[2], # track_number:str
+        'N/A', # release_date:str
+        a_or_b(columns[14], columns[8]), # collection_view_url:str
+        a_or_b(columns[15], columns[9]), # track_view_url:str
     ])
 
 def str_similarity(a,b):
@@ -208,7 +213,7 @@ def main():
             if is_header: # ヘッダ行skip
                 is_header = False
                 continue
-            seed = seed_v2_to_v1(line.rstrip().split("\t"))
+            seed = seed_v2_to_v1(line.rstrip("\n").split("\t"))
             #seed = Seed._make(line.rstrip().split("\t")[:7])
             if is_debug:
                 pprint(seed)
