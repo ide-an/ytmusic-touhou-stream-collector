@@ -18,6 +18,9 @@ class YTMusicResult(typing.NamedTuple):
 
 def read_line(line:str):
     cols = line.rstrip().split("\t")
+    cols[4] = 'N/A'
+    cols[5] = cols[5].replace('?uo=4','')
+    cols[6] = cols[6].replace('&uo=4','')
     seed = Seed._make(cols[:7])
     result = YTMusicResult._make(cols[7:])
     return (seed, result)
