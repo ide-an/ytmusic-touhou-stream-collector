@@ -9,6 +9,18 @@ import difflib
 import traceback
 from common import Seed, YTMusicResult, create_ytmusic_url, output_line, output_header, get_album_detail
 
+def seed_v2_to_v1(columns):
+    # jan	isrc	no	circle	spotify_album_artist_name	spotify_album_name	spotify_artist_name	spotify_track_name	spotify_album_url	spotify_track_url	apple_music_album_artist_name	apple_music_album_name	apple_music_artist_name	apple_music_track_name	apple_music_album_url	apple_music_track_url
+    return Seed._make([
+    columns[11], # collection_name:str
+    columns[13], # track_name:str
+    columns[12], # artist_name:str
+    columns[2], # track_number:str
+    'N/A', # release_date:str
+    columns[14], # collection_view_url:str
+    columns[15], # track_view_url:str
+    ])
+
 def str_similarity(a,b):
     return difflib.SequenceMatcher(None, a, b).ratio()
 
@@ -196,7 +208,8 @@ def main():
             if is_header: # ヘッダ行skip
                 is_header = False
                 continue
-            seed = Seed._make(line.rstrip().split("\t")[:7])
+            seed = seed_v2_to_v1(line.rstrip().split("\t"))
+            #seed = Seed._make(line.rstrip().split("\t")[:7])
             if is_debug:
                 pprint(seed)
             try:
