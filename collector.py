@@ -15,7 +15,7 @@ def seed_v2_to_v1(columns):
             return b
         return a
     # jan	isrc	no	circle	spotify_album_artist_name	spotify_album_name	spotify_artist_name	spotify_track_name	spotify_album_url	spotify_track_url	apple_music_album_artist_name	apple_music_album_name	apple_music_artist_name	apple_music_track_name	apple_music_album_url	apple_music_track_url
-    print(columns)
+    #print(columns)
     return Seed._make([
         a_or_b(columns[11], columns[5]), # collection_name:str
         a_or_b(columns[13], columns[7]), # track_name:str
