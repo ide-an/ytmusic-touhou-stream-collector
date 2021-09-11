@@ -68,5 +68,6 @@ def create_ytmusic_url(album, track):
 album_detail_cache = {}
 def get_album_detail(yt, browseId):
     if browseId not in album_detail_cache:
+        print(browseId)
         album_detail_cache[browseId] = yt.get_album(browseId)
     return album_detail_cache[browseId]

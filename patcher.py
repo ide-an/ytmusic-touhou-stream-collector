@@ -24,7 +24,8 @@ def correct_result(yt:ytmusicapi.YTMusic, seed, ytm_result):
     album_detail = get_album_detail(yt, browse_id)
     album_detail["browseId"] = browse_id
     if ytm_result.track_view_url == "不明":
-        track = [x for x in album_detail["tracks"] if x["index"] == seed.track_number][0]
+        #track = [x for x in album_detail["tracks"] if x["index"] == seed.track_number][0]
+        track = [x for i, x in enumerate(album_detail["tracks"]) if str(i+1) == seed.track_number][0]
     else:
         track_id = get_track_id(ytm_result.track_view_url)
         track = [x for x in album_detail["tracks"] if x["videoId"] == track_id][0]

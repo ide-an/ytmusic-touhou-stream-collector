@@ -29,6 +29,9 @@ ls patch.tsv
 # patch.tsvによる修正の適用。result_patched.tsvに出力される
 python patcher.py
 
+# ytmのみにあるアルバム（シロ氏のリストにないもの）を追加
+cat ytm_only.tsv >> result_patched.tsv
+
 # diffを取りやすいようにsort
 python sort.py result_patched.tsv result_patched_sorted.tsv
 

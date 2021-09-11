@@ -41,7 +41,7 @@ def seed_v3_to_v1(columns):
 def str_similarity(a,b):
     return difflib.SequenceMatcher(None, a, b).ratio()
 
-is_debug = True
+is_debug = False
 
 def normalize_search_key(search_key):
     # マイナス検索にならないようにハイフンから始まるトークンを置換
