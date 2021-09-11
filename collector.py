@@ -26,10 +26,22 @@ def seed_v2_to_v1(columns):
         a_or_b(columns[15], columns[9]), # track_view_url:str
     ])
 
+def seed_v3_to_v1(columns):
+    # collection_name	track_name	artist_name	track_number	release_date	collection_view_url	track_view_url	spotify_collection_name	spotify_track_name	spotify_collection_view_url	spotify_track_view_url	amazon_music_collection_name	amazon_music_track_name	amazon_store_collection_view_url	amazon_music_collection_view_url	amazon_music_track_view_url
+    return Seed._make([
+        columns[0], # collection_name:str
+        columns[1], # track_name:str
+        columns[2], # artist_name:str
+        columns[3], # track_number:str
+        columns[4], # release_date:str
+        columns[5], # collection_view_url:str
+        columns[6], # track_view_url:str
+    ])
+
 def str_similarity(a,b):
     return difflib.SequenceMatcher(None, a, b).ratio()
 
-is_debug = False
+is_debug = True
 
 def normalize_search_key(search_key):
     # マイナス検索にならないようにハイフンから始まるトークンを置換
@@ -143,8 +155,8 @@ def find_track_in_albums(yt, seed, albums):
         pprint([(x["title"],str_similarity(normalize(x["title"]), norm_collection_name)) for x in albums])
     for album in albums:
         if is_debug:
-            pass
-            #pprint(album)
+            #pass
+            pprint(album)
         # apple musicでのアーティスト名は必ずしもyoutube musicと一致しない。そのためアーティスト名の判定はしない
         # 例： 「蓬莱人形 ~ Dolls in Pseudo Paradise」のアルバムアーティストは「ZUN」ではなく「上海アリス幻樂団」
         norm_album_title = normalize(album["title"])
@@ -158,8 +170,12 @@ def find_track_in_albums(yt, seed, albums):
             album_detail = get_album_detail(yt, album["browseId"])
             if is_debug:
                 pprint(album_detail)
+            track_num_estimate = 0
             for track in album_detail["tracks"]:
-                if track["index"] != seed.track_number: # 同じ曲だけどトラック番号が違うというケースはあり得るがごく少ないのでpatch.tsvで拾う
+                track_num_estimate += 1
+                if "index" in track and track["index"] != seed.track_number: # 同じ曲だけどトラック番号が違うというケースはあり得るがごく少ないのでpatch.tsvで拾う
+                    continue
+                if "index" not in track and str(track_num_estimate) != seed.track_number: # ytmがindexを返してくれないケースがあるので自前でtrack numberを求める
                     continue
                 similarity = str_similarity(normalize(track["title"]), normalize(seed.track_name))
                 if is_debug:
@@ -213,7 +229,7 @@ def main():
             if is_header: # ヘッダ行skip
                 is_header = False
                 continue
-            seed = seed_v2_to_v1(line.rstrip("\n").split("\t"))
+            seed = seed_v3_to_v1(line.rstrip("\n").split("\t"))
             #seed = Seed._make(line.rstrip().split("\t")[:7])
             if is_debug:
                 pprint(seed)
