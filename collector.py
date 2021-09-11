@@ -41,7 +41,7 @@ def seed_v3_to_v1(columns):
 def str_similarity(a,b):
     return difflib.SequenceMatcher(None, a, b).ratio()
 
-is_debug = False
+is_debug =True 
 
 def normalize_search_key(search_key):
     # マイナス検索にならないようにハイフンから始まるトークンを置換
@@ -229,7 +229,7 @@ def main():
             if is_header: # ヘッダ行skip
                 is_header = False
                 continue
-            seed = seed_v3_to_v1(line.rstrip("\n").split("\t"))
+            seed = seed_v2_to_v1(line.rstrip("\n").split("\t"))
             #seed = Seed._make(line.rstrip().split("\t")[:7])
             if is_debug:
                 pprint(seed)

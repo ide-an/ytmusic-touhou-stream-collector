@@ -6,7 +6,7 @@ ytmusic-touhou-stream-collectorは[東方同人音楽流通](https://touhou-musi
 
 出力結果は[google doc: 東方同人音楽流通 Apple Music + YouTube Music](https://docs.google.com/spreadsheets/d/1H9X67bJe-hWKFXn1w1gPFao3p3fykOGFQO_6eJY4Q34/edit?usp=sharing)に公開しています。
 
-リストのシードデータとして @shiroemons氏による[AppleMusicの配信リスト](https://docs.google.com/spreadsheets/d/1h1M6Q0UPGvF8kTIiw0F5c7k0mGlkyhrI4kSkASRV_bw)を利用しています。
+リストのシードデータとして @shiroemons氏による[AppleMusicの配信リスト](https://docs.google.com/spreadsheets/d/1Z34KdlgLH8Go-CRsv77wZDWmd-h6d4xelgIwMkYxCCw/edit#gid=0)を利用しています。
 
 ## How to run
 
